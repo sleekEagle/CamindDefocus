@@ -1,0 +1,16 @@
+dataset: nyu_defocus
+# mode: training or evaluation
+#if true, try to use the GPU if available. false: do not use GPU even if its availabel
+use_gpu: true
+
+datasets:
+  nyu_defocus:
+    base_path: 'D:\\data\\nyu_depth_v2\\ours\\'
+    depth_dir: 'rawDepth'
+    rgb_dirs: ['f_30_fdist_2_dsigma_3']
+    crop: [400,400]
+    bs: 2
+
+
+
+
