@@ -24,6 +24,10 @@ def show_data(d):
     image=get_showable_image(d['image'])
     depth=get_showable_image(d['depth'])
     blur=get_showable_image(d['blur'])
+    # blur=blur/np.max(blur)
+    depth[depth<0]=0
+    depth=depth/np.max(depth)
+    image=image.astype('float32')/255
 
     stack=depth
     if depth.shape==blur.shape:
@@ -41,7 +45,6 @@ def train(conf : DictConfig) -> None:
     print(OmegaConf.to_yaml(conf))
     dl=nyudefocus(conf,'train')
     d=next(iter(dl))
-    # show_image(d['image'])
     show_data(d)
     print('here')
 

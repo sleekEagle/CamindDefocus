@@ -9,6 +9,7 @@ datasets:
     depth_dir: 'rawDepth'
     rgb_dirs: ['f_30_fdist_2_dsigma_3']
     crop: [400,400]
+    original_size: [640,480]
     bs: 2
 
 

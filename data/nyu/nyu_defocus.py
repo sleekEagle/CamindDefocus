@@ -20,6 +20,7 @@ class nyudefocus(Dataset):
         self.meta_data=json.load(meta_file)
         self.depth_path=os.path.join(conf.datasets.nyu_defocus.base_path,
                                      conf.datasets.nyu_defocus.depth_dir)
+        self.filled_depth_path=os.path.join(conf.datasets.nyu_defocus.base_path,'filledDepth')
         #read scene names
         scene_path=os.path.join(conf.datasets.nyu_defocus.base_path, 'scenes.mat')
         self.scenes=scipy.io.loadmat(scene_path)['scenes']
@@ -34,6 +35,11 @@ class nyudefocus(Dataset):
             self.file_idx=list(splits['testNdxs'][:,0])
 
         crop=conf.datasets.nyu_defocus.crop=conf.datasets.nyu_defocus.crop
+        ori_size=conf.datasets.nyu_defocus.original_size
+        # depth_resize=[
+        #     A.Resize(height=ori_size[0],width=ori_size[1])
+        # ]
+        # self.depth_transform=A.Compose(depth_resize)
         basic_transform = [
             A.HorizontalFlip(),
             A.RandomCrop(crop[0],crop[1]),
@@ -52,30 +58,12 @@ class nyudefocus(Dataset):
         return len(self.file_idx)
         
     def get_blur(self,s1,s2,f):
+        #avoid division by zero
+        s2[s2==0]=-1
         blur=np.abs(s2-s1)/s2/(s1-f)*(f**2)/(self.blur_scale**2)
+        #remove all negative values
+        blur[blur<0]=0
         return blur
-    
-    def augment_training_data(self,image,depth):
-        H, W, C = image.shape
-
-        additional_targets = {'depth': 'mask'}
-        
-        aug = A.Compose(transforms=self.basic_transform,
-                        additional_targets=additional_targets)
-        augmented = aug(image=image, depth=depth)
-
-        image = augmented['image']
-        depth = augmented['depth']
-
-        totensor=transforms.ToTensor()
-        image = totensor(image)
-        depth = self.to_tensor(depth).squeeze()
-        return image,depth
-
-    def augment_test_data(self, image, depth):
-        image = self.to_tensor(image)
-        depth = self.to_tensor(depth).squeeze()
-        return image,depth
     
     def get_camparam(self,dir_name):
         splitvals=dir_name.split('_')
@@ -108,10 +96,10 @@ class nyudefocus(Dataset):
         depth_re=cv2.resize(depth,(w,h))
 
         if self.mode=='train':
-            transformed=self.train_transform(image=image,mask=depth)
+            transformed=self.train_transform(image=image,mask=depth_re)
             image,depth = transformed['image'],transformed['mask']
         elif self.mode=='test':
-            transformed=self.test_transform(image=image,mask=depth)
+            transformed=self.test_transform(image=image,mask=depth_re)
             image,depth = transformed['image'],transformed['mask']
 
         blur=self.get_blur(camparam['fdist'],depth,camparam['f_m'])
